@@ -23,6 +23,7 @@ ENCSTEPS = config["encsteps"]
 ALTSTEPS = config["altsteps"]
 ACCESSPOINT = None
 PASSWORD = None
+VERSION = None
 SPECIAL = False
 
 VFDVAL = 0
@@ -50,9 +51,6 @@ def encoder_updated(pos, delta):
 
 #local encoder
 r = RotaryIRQ(pin_num_clk=16, pin_num_dt=18, incr=ENCSTEPS, min_val=0, max_val=255, pull_up=True, range_mode=RotaryIRQ.RANGE_BOUNDED)
-#py = Pin(16, Pin.IN, Pin.PULL_UP)
-#px = Pin(18, Pin.IN, Pin.PULL_UP)
-#enc = Encoder(px, py, vmin=0, vmax=51, div=4, callback=encoder_updated)
 led = Pin(15, Pin.OUT)
 led.on()
 
@@ -69,7 +67,7 @@ esp32.wake_on_ext0(pin = Pin(17), level = esp32.WAKEUP_ALL_LOW)
 
 
 def update_setting(msgd):
-    global SLEEP, DEBUG, HOST, ENCSTEPS, ALTSTEPS, ACCESSPOINT, PASSWORD, config
+    global SLEEP, DEBUG, HOST, ENCSTEPS, ALTSTEPS, ACCESSPOINT, PASSWORD, VERSION, config
     if msgd[1:3] == "HM":
         HOST = msgd[3:]
         peer = binascii.unhexlify(HOST.replace(':', ''))
@@ -96,32 +94,43 @@ def update_setting(msgd):
         ACCESSPOINT = msgd[3:]
     if msgd[1:3] == "PW":
         PASSWORD = msgd[3:]
+    if msgd[1:3] == "VN":
+        VERSION = msgd[3:]
+        try:
+            with open('version', 'r') as f:
+                local_version = f.read().strip()
+                if local_version < VERSION:
+                    network_update()
+        except OSError:        
+            print('local version information missing, cannot proceed')
+
+
     print(ENCSTEPS, ALTSTEPS)
 
 def network_update():
     import network, gc, time, uota
+    global e, sta
     asyncio.new_event_loop()
-    #gc.collect()
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    #wlan.config(dhcp_hostname="lathe-test")
-    wlan.config(dhcp_hostname="lathe")
+    e.active(False)
+    gc.collect()
+    sta.active(True)
     endtime = time.ticks_add(time.ticks_ms(), 45000)
-    if not wlan.isconnected():
+    if not sta.isconnected():
         print('connecting to network...')
-        wlan.connect(ACCESSPOINT, PASSWORD)
-        while not wlan.isconnected() and time.ticks_diff(endtime, time.ticks_ms()) > 0:
+        sta.connect(ACCESSPOINT, PASSWORD)
+        while not sta.isconnected() and time.ticks_diff(endtime, time.ticks_ms()) > 0:
             pass
-    print('network config:', wlan.ifconfig())
-    if uota.check_for_updates():
-        print("Found new update....Downloading")
+    print('network config:', sta.ifconfig())
+    if sta.isconnected():
+        if uota.check_for_updates():
+            print("Found new update....Downloading")
+            uota.install_new_firmware()
+            time.sleep(5)
+            reset()
+        print("No update found")
         time.sleep(5)
         reset()
-    print("No update found")
-    time.sleep(5)
-    reset()
-    
-    return wlan.isconnected()
+    e.active(True)
 
 #SPECIAL
 def start_encoder_mode():

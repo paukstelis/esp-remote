@@ -100,6 +100,7 @@ def update_setting(msgd):
             with open('version', 'r') as f:
                 local_version = f.read().strip()
                 if local_version < VERSION:
+                    print(local_version, VERSION)
                     network_update()
         except OSError:        
             print('local version information missing, cannot proceed')
@@ -131,6 +132,8 @@ def network_update():
     sta.disconnect()
     #time.sleep(5)
     #reset()
+    gc.collect()
+    e = espnow.ESPNow()
     e.active(True)
 
 #SPECIAL

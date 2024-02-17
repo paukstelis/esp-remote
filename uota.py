@@ -102,7 +102,6 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
         ota_config['url'] = ota_config['url'] + '/'
 
     response = urequests.get(ota_config['url'] + 'latest')
-
     if ucertpin_available and pubkey_hash:
         server_pubkey_hash = get_pubkey_hash_from_der(response.raw.getpeercert(True))
         if server_pubkey_hash != pubkey_hash:
@@ -110,6 +109,7 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
             return False
 
     remote_version, remote_filename, *optional = response.text.strip().rstrip(';').split(';')
+   
     min_free_space, *remote_hash = optional if optional else (0, '')
     min_free_space = int(min_free_space)
     remote_hash = remote_hash[0] if remote_hash else ''
@@ -117,6 +117,7 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
     try:
         with open('version', 'r') as f:
             local_version = f.read().strip()
+            print(remote_version, local_version)
     except OSError:
         if version_check:
             not quiet and log.warning('local version information missing, cannot proceed')

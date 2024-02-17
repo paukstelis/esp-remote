@@ -108,9 +108,8 @@ def update_setting(msgd):
     print(ENCSTEPS, ALTSTEPS)
 
 def network_update():
-    import network, gc, time, uota
+    import uota
     global e, sta
-    asyncio.new_event_loop()
     e.active(False)
     gc.collect()
     sta.active(True)
@@ -127,9 +126,11 @@ def network_update():
             uota.install_new_firmware()
             time.sleep(5)
             reset()
-        print("No update found")
-        time.sleep(5)
-        reset()
+        else:
+            print("No update found")
+    sta.disconnect()
+    #time.sleep(5)
+    #reset()
     e.active(True)
 
 #SPECIAL

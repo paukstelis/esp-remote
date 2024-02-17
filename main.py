@@ -111,7 +111,7 @@ def update_setting(msgd):
 def network_update():
     import uota
     global e, sta
-    e.active(False)
+    #e.active(False)
     gc.collect()
     sta.active(True)
     endtime = time.ticks_add(time.ticks_ms(), 45000)
@@ -129,12 +129,8 @@ def network_update():
             reset()
         else:
             print("No update found")
-    sta.disconnect()
-    #time.sleep(5)
-    #reset()
-    gc.collect()
-    e = espnow.ESPNow()
-    e.active(True)
+        sta.disconnect()
+        gc.collect()
 
 #SPECIAL
 def start_encoder_mode():

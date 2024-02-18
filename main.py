@@ -206,7 +206,7 @@ async def get_message():
             elif msgd.startswith('R'):
                 print("starts with R")
             elif msgd.startswith('P'):
-                send_message('A')
+                print("Ping")
             else:
                 reset_encoder(int(msg))
             if not msgd.startswith('P'):    
